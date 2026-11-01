@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="FoodOrder.App/FoodOrder.App.csproj" />
+  <Project Path="FoodOrder.Data/FoodOrder.Data.csproj" />
+  <Project Path="FoodOrder.Domain/FoodOrder.Domain.csproj" />
+  <Project Path="FoodOrder.Services/FoodOrder.Services.csproj" />
+  <Project Path="FoodOrder.Tests/FoodOrder.Tests.csproj" />
+  <Project Path="FoodOrder.Wpf/FoodOrder.Wpf.csproj" />
+</Solution>
