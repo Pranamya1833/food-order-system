@@ -162,10 +162,14 @@ public partial class MainWindow : Window
 
         Loaded += (s, e) => SpawnFalling(RainCanvas, 18, true, 7, 14, 0.3);
 
+        Loaded += async (s, e) =>
+        {
+            await RefreshOrdersAsync();
+            await RefreshReportsAsync();
+        };
+
         ApplyFilter();
         RefreshCart();
-        RefreshOrders();
-        RefreshReports();
     }
 
     // ================= Login and sign up =================
@@ -235,7 +239,7 @@ public partial class MainWindow : Window
 
     // ================= Navigation =================
 
-    private void Nav_Checked(object sender, RoutedEventArgs e)
+    private async void Nav_Checked(object sender, RoutedEventArgs e)
     {
         if (!IsLoaded) return;
 
@@ -245,8 +249,8 @@ public partial class MainWindow : Window
         OrdersPanel.Visibility = page == "Orders" ? Visibility.Visible : Visibility.Collapsed;
         ReportsPanel.Visibility = page == "Reports" ? Visibility.Visible : Visibility.Collapsed;
 
-        RefreshOrders();
-        RefreshReports();
+        await RefreshOrdersAsync();
+        await RefreshReportsAsync();
 
         UIElement shown = page == "Menu" ? MenuPanel : page == "Orders" ? OrdersPanel : ReportsPanel;
         FadeIn(shown, 0.3);
@@ -342,11 +346,11 @@ public partial class MainWindow : Window
         RefreshCart();
     }
 
-    private void PlaceOrder_Click(object sender, RoutedEventArgs e)
+    private async void PlaceOrder_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            var placed = _service.PlaceOrder(_cart, _discount);
+            var placed = await _service.PlaceOrderAsync(_cart, _discount);
 
             _cart = new Cart();
             _discount = null;
@@ -354,8 +358,8 @@ public partial class MainWindow : Window
             CouponMessage.Text = "Try SAVE10, FLAT50 or BIG100";
 
             RefreshCart();
-            RefreshOrders();
-            RefreshReports();
+            await RefreshOrdersAsync();
+            await RefreshReportsAsync();
             ShowOrderPlaced(placed);
         }
         catch (EmptyCartException ex)
@@ -394,9 +398,10 @@ public partial class MainWindow : Window
 
     // ================= Orders and reports =================
 
-    private void RefreshOrders()
+    private async Task RefreshOrdersAsync()
     {
-        var rows = _service.GetAllOrders()
+        var orders = await _service.GetAllOrdersAsync();
+        var rows = orders
             .OrderByDescending(o => o.Id)
             .Select(o => new OrderRow(
                 string.Concat(o.Items.Select(i => _emoji.GetValueOrDefault(i.Id, "")).Distinct().Take(3)),
@@ -410,9 +415,9 @@ public partial class MainWindow : Window
         NoOrdersText.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    private void RefreshReports()
+    private async Task RefreshReportsAsync()
     {
-        var orders = _service.GetAllOrders();
+        var orders = await _service.GetAllOrdersAsync();
         decimal revenue = ReportService.TotalRevenue(orders);
 
         RevenueText.Text = $"Rs. {revenue:0.##}";

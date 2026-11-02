@@ -12,15 +12,16 @@ public class JsonRepository<T> : IRepository<T>
     {
         _path = path;
         _items = File.Exists(path)
-          ?JsonSerializer.Deserialize<List<T>>(File.ReadAllText(path)) ?? new()
-          : new();
+            ? JsonSerializer.Deserialize<List<T>>(File.ReadAllText(path)) ?? new()
+            : new();
     }
 
-    public void Add(T item)
+    public async Task AddAsync(T item)
     {
         _items.Add(item);
-        File.WriteAllText(_path, 
-        JsonSerializer.Serialize(_items, new JsonSerializerOptions { WriteIndented = true}));
-    } 
-    public IReadOnlyList<T> GetAll() => _items;
-} 
+        string json = JsonSerializer.Serialize(_items, new JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(_path, json);
+    }
+
+    public Task<IReadOnlyList<T>> GetAllAsync() => Task.FromResult<IReadOnlyList<T>>(_items);
+}

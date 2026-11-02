@@ -60,28 +60,47 @@ public class CartAndOrderTests
 public class FakeRepository<T> : IRepository<T>
 {
     private readonly List<T> _items = new();
-    public void Add(T item) => _items.Add(item);
-    public IReadOnlyList<T> GetAll() => _items;
+
+    public Task AddAsync(T item)
+    {
+        _items.Add(item);
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<T>> GetAllAsync() => Task.FromResult<IReadOnlyList<T>>(_items);
 }
 
 public class OrderServiceTests
 {
     [Fact]
-    public void PlaceOrder_EmptyCart_Throws()
+    public async Task PlaceOrder_EmptyCart_Throws()
     {
         var service = new OrderService(new FakeRepository<Order>());
-    Assert.Throws<EmptyCartException>(() => service.PlaceOrder(new Cart()));
+        await Assert.ThrowsAsync<EmptyCartException>(() => service.PlaceOrderAsync(new Cart()));
     }
+
     [Fact]
-    public void PlaceOrder_WithDiscount_StoresDiscountedTotal()
+    public async Task PlaceOrder_WithDiscount_StoresDiscountedTotal()
     {
         var service = new OrderService(new FakeRepository<Order>());
         var cart = new Cart();
-        cart.Add(new VegItem {Name = "Paneer Tikka", Price = 200m});
+        cart.Add(new VegItem { Name = "Paneer Tikka", Price = 200m });
 
-        var order = service.PlaceOrder(cart, new PercentageDiscount(10));
+        var order = await service.PlaceOrderAsync(cart, new PercentageDiscount(10));
 
         Assert.Equal(180m, order.Total);
     }
-}
 
+    [Fact]
+    public async Task PlaceOrder_TwoOrders_GetIncreasingIds()
+    {
+        var service = new OrderService(new FakeRepository<Order>());
+        var cart = new Cart();
+        cart.Add(new VegItem { Name = "Dosa", Price = 100m });
+
+        var first = await service.PlaceOrderAsync(cart);
+        var second = await service.PlaceOrderAsync(cart);
+
+        Assert.Equal(first.Id + 1, second.Id);
+    }
+}

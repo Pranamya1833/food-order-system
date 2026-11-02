@@ -1,4 +1,5 @@
 using FoodOrder.Domain;
+using Microsoft.EntityFrameworkCore;
 
 namespace FoodOrder.Data;
 
@@ -12,11 +13,11 @@ public class EfOrderRepository : IRepository<Order>
         _db.Database.EnsureCreated();
     }
 
-    public void Add(Order item)
+    public async Task AddAsync(Order item)
     {
         _db.Orders.Add(item);
-        _db.SaveChanges();
+        await _db.SaveChangesAsync();
     }
 
-    public IReadOnlyList<Order> GetAll() => _db.Orders.ToList();
+    public async Task<IReadOnlyList<Order>> GetAllAsync() => await _db.Orders.ToListAsync();
 }

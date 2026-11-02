@@ -2,6 +2,6 @@ namespace FoodOrder.Domain;
 
 public interface IRepository<T>
 {
-    void Add(T item);
-    IReadOnlyList<T> GetAll();
+    Task AddAsync(T item);
+    Task<IReadOnlyList<T>> GetAllAsync();
 }
