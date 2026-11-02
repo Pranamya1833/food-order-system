@@ -4,6 +4,6 @@ namespace FoodOrder.Services;
 
 public interface IOrderService
 {
-    Order PlaceOrder(Cart cart, IDiscount? discount = null);
-    IReadOnlyList<Order>GetAllOrders();
+    Task<Order> PlaceOrderAsync(Cart cart, IDiscount? discount = null);
+    Task<IReadOnlyList<Order>> GetAllOrdersAsync();
 }

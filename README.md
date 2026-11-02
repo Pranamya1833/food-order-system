@@ -1,4 +1,5 @@
 # Food Order System
+   ![CI](https://github.com/Pranamya1833/food-order-system/actions/workflows/ci.yml/badge.svg)
 
 A layered C# application for ordering food: browse a menu, build a cart, apply coupons, place orders, and see sales reports. It runs as a console app and as a WPF desktop app on top of the same business logic.
 

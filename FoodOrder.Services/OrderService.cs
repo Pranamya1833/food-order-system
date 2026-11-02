@@ -5,35 +5,43 @@ namespace FoodOrder.Services;
 public class OrderService : IOrderService
 {
     private readonly IRepository<Order> _repository;
-    private int _nextId;
+    private int? _nextId;
+
     public OrderService(IRepository<Order> repository)
     {
         _repository = repository;
-        _nextId = repository.GetAll().Count + 1;
     }
-    public Order PlaceOrder(Cart cart, IDiscount? discount = null)
+
+    public async Task<Order> PlaceOrderAsync(Cart cart, IDiscount? discount = null)
     {
-        if(cart.Items.Count == 0)
+        if (cart.Items.Count == 0)
         {
             throw new EmptyCartException();
         }
+
         decimal total = cart.GetTotal();
-        
-        if(discount!=null)
+        if (discount != null)
         {
             total = discount.Apply(total);
         }
 
+        if (_nextId == null)
+        {
+            var existing = await _repository.GetAllAsync();
+            _nextId = existing.Count == 0 ? 1 : existing.Max(o => o.Id) + 1;
+        }
+
         var order = new Order
         {
-            Id = _nextId++,
+            Id = _nextId.Value,
             Items = cart.Items.ToList(),
             Total = total
         };
+        _nextId++;
 
-        _repository.Add(order);
+        await _repository.AddAsync(order);
         return order;
-
     }
-    public IReadOnlyList<Order> GetAllOrders() => _repository.GetAll();
+
+    public Task<IReadOnlyList<Order>> GetAllOrdersAsync() => _repository.GetAllAsync();
 }
