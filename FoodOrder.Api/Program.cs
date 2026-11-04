@@ -6,9 +6,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton<IRepository<Order>>(_ => new EfOrderRepository(new OrderDbContext("order.db")));
 builder.Services.AddSingleton<IOrderService, OrderService>();
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
-
+app.MapOpenApi();
+app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json"," Food Order API v1"));
 app.MapGet("/api/menu", () =>
     MenuCatalog.Items.Select(m => new MenuItemResponse(m.Id, m.Name, m.Price, m is VegItem ? "Veg" : "Non-veg")));
 
