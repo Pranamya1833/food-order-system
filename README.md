@@ -62,7 +62,7 @@ The SQLite database (`order.db`) is created in the folder you run from.
 
 ## Roadmap
 
-- [ ] Make repository and service methods async
+- [ Done ] Make repository and service methods async
 - [ ] ASP.NET Core Web API with Swagger
 - [ ] JWT login and per-user orders
 - [ ] GitHub Actions to build and test on every push
