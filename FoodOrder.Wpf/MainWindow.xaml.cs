@@ -70,6 +70,8 @@ public partial class MainWindow : Window
     private IDiscount? _discount;
     private bool _registerMode;
 
+    private string _currentUser = "";
+
     public MainWindow()
     {
         InitializeComponent();
@@ -153,6 +155,7 @@ public partial class MainWindow : Window
 
     private void EnterApp(string name)
     {
+        _currentUser = name;
         GreetingText.Text = $"Hi, {name}";
         UserBox.Clear();
         PassBox.Clear();
@@ -292,7 +295,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            var placed = await _service.PlaceOrderAsync(_cart, _discount);
+            var placed = await _service.PlaceOrderAsync(_cart, _discount, _currentUser);
 
             _cart = new Cart();
             _discount = null;
@@ -342,7 +345,7 @@ public partial class MainWindow : Window
 
     private async Task RefreshOrdersAsync()
     {
-        var orders = await _service.GetAllOrdersAsync();
+        var orders = (await _service.GetAllOrdersAsync()).Where(o => o.CustomerName == _currentUser).ToList();
         var rows = orders
             .OrderByDescending(o => o.Id)
             .Select(o => new OrderRow(
@@ -359,7 +362,7 @@ public partial class MainWindow : Window
 
     private async Task RefreshReportsAsync()
     {
-        var orders = await _service.GetAllOrdersAsync();
+        var orders = (await _service.GetAllOrdersAsync()).Where(o => o.CustomerName == _currentUser).ToList();
         decimal revenue = ReportService.TotalRevenue(orders);
 
         RevenueText.Text = $"Rs. {revenue:0.##}";

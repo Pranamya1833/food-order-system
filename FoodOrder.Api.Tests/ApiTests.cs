@@ -44,12 +44,12 @@ public class ApiFactory : WebApplicationFactory<Program>
 
 public class ApiTests
 {
-    private static async Task<HttpClient> LoggedInClientAsync(ApiFactory factory)
+    private static async Task<HttpClient> LoggedInClientAsync(ApiFactory factory, string username = "tester")
     {
         var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/auth/register", new { username = "tester", password = "secret123" });
+        await client.PostAsJsonAsync("/api/auth/register", new { username, password = "secret123" });
 
-        var login = await client.PostAsJsonAsync("/api/auth/login", new { username = "tester", password = "secret123" });
+        var login = await client.PostAsJsonAsync("/api/auth/login", new { username, password = "secret123" });
         var body = await login.Content.ReadFromJsonAsync<JsonElement>();
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", body.GetProperty("token").GetString());
@@ -165,5 +165,21 @@ public class ApiTests
 
         Assert.Equal(1, summary.GetProperty("orderCount").GetInt32());
         Assert.Equal(530m, summary.GetProperty("revenue").GetDecimal());
+    }
+
+    [Fact]
+    public async Task GetOrders_ReturnsOnlyTheLoggedInUsersOrders()
+    {
+        using var factory = new ApiFactory();
+        var alice = await LoggedInClientAsync(factory, "alice");
+        var bob = await LoggedInClientAsync(factory, "bob");
+
+        await alice.PostAsJsonAsync("/api/orders", new { itemIds = new[] { 1 } });
+
+        var aliceOrders = await alice.GetFromJsonAsync<List<JsonElement>>("/api/orders");
+        var bobOrders = await bob.GetFromJsonAsync<List<JsonElement>>("/api/orders");
+
+        Assert.Single(aliceOrders!);
+        Assert.Empty(bobOrders!);
     }
 }
