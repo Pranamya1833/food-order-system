@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="FoodOrder.Api.Tests/FoodOrder.Api.Tests.csproj" />
   <Project Path="FoodOrder.Api/FoodOrder.Api.csproj" />
   <Project Path="FoodOrder.App/FoodOrder.App.csproj" />
   <Project Path="FoodOrder.Data/FoodOrder.Data.csproj" />
