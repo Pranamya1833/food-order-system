@@ -486,3 +486,6 @@ orders.db
 order.json
 FoodOrder.Wpf/Images/
 orders.json
+*.db
+*.db-shm
+*.db-wal

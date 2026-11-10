@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FoodOrder.Api\FoodOrder.Api.csproj" />
+    <ProjectReference Include="..\FoodOrder.Data\FoodOrder.Data.csproj" />
   </ItemGroup>
 
 </Project>
