@@ -25,7 +25,8 @@ builder.Services
             ValidAudience = JwtSettings.Audience,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = JwtSettings.GetKey(builder.Configuration),
-            ValidateLifetime = true
+            ValidateLifetime = true,
+            NameClaimType = "name"
         };
     });
 builder.Services.AddAuthorization();
@@ -56,7 +57,7 @@ app.MapPost("/api/auth/login", (LoginRequest request, UserStore users, IConfigur
 
     var descriptor = new SecurityTokenDescriptor
     {
-        Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, name) }),
+        Subject = new ClaimsIdentity(new[] { new Claim("name", name) }),
         Issuer = JwtSettings.Issuer,
         Audience = JwtSettings.Audience,
         Expires = DateTime.UtcNow.AddHours(2),
@@ -70,13 +71,14 @@ app.MapPost("/api/auth/login", (LoginRequest request, UserStore users, IConfigur
 app.MapGet("/api/menu", () =>
     MenuCatalog.Items.Select(m => new MenuItemResponse(m.Id, m.Name, m.Price, m is VegItem ? "Veg" : "Non-veg")));
 
-app.MapGet("/api/orders", async (IOrderService service) =>
+app.MapGet("/api/orders", async (IOrderService service, ClaimsPrincipal user) =>
 {
-    var orders = await service.GetAllOrdersAsync();
+    string name = user.Identity?.Name ?? "";
+    var orders = (await service.GetAllOrdersAsync()).Where(o => o.CustomerName == name);
     return orders.Select(ToResponse);
 }).RequireAuthorization();
 
-app.MapPost("/api/orders", async (PlaceOrderRequest request, IOrderService service) =>
+app.MapPost("/api/orders", async (PlaceOrderRequest request, IOrderService service, ClaimsPrincipal user) =>
 {
     var cart = new Cart();
 
@@ -102,7 +104,7 @@ app.MapPost("/api/orders", async (PlaceOrderRequest request, IOrderService servi
 
     try
     {
-        var order = await service.PlaceOrderAsync(cart, discount);
+        var order = await service.PlaceOrderAsync(cart, discount, user.Identity?.Name ?? "");
         return Results.Created($"/api/orders/{order.Id}", ToResponse(order));
     }
     catch (EmptyCartException ex)
@@ -111,9 +113,10 @@ app.MapPost("/api/orders", async (PlaceOrderRequest request, IOrderService servi
     }
 }).RequireAuthorization();
 
-app.MapGet("/api/reports/summary", async (IOrderService service) =>
+app.MapGet("/api/reports/summary", async (IOrderService service, ClaimsPrincipal user) =>
 {
-    var orders = await service.GetAllOrdersAsync();
+    string name = user.Identity?.Name ?? "";
+    var orders = (await service.GetAllOrdersAsync()).Where(o => o.CustomerName == name).ToList();
     return new
     {
         OrderCount = orders.Count,

@@ -12,7 +12,7 @@ public class OrderService : IOrderService
         _repository = repository;
     }
 
-    public async Task<Order> PlaceOrderAsync(Cart cart, IDiscount? discount = null)
+    public async Task<Order> PlaceOrderAsync(Cart cart, IDiscount? discount = null, string customerName = "")
     {
         if (cart.Items.Count == 0)
         {
@@ -35,7 +35,8 @@ public class OrderService : IOrderService
         {
             Id = _nextId.Value,
             Items = cart.Items.ToList(),
-            Total = total
+            Total = total,
+            CustomerName = customerName
         };
         _nextId++;
 
