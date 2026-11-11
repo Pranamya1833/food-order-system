@@ -46,7 +46,7 @@ A layered C# application for ordering food: browse a menu, build a cart, apply c
 
 ## API Endpoints
 
-Run the API:
+Run the API :
 
 ```powershell
 dotnet run --project FoodOrder.Api --urls http://localhost:5000
