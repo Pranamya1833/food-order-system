@@ -116,12 +116,18 @@ public partial class MainWindow : Window
         RefreshCart();
     }
 
-    // ================= Login and sign up =================
+    // ================= Authentication =================
 
     private void AuthSubmit_Click(object sender, RoutedEventArgs e)
     {
         string username = UserBox.Text.Trim();
         string password = PassBox.Password;
+
+        if (username.Length == 0 || password.Length == 0)
+        {
+            AuthMessage.Text = "Please enter both username and password.";
+            return;
+        }
 
         if (_registerMode)
         {
@@ -151,6 +157,31 @@ public partial class MainWindow : Window
         AuthTitle.Text = _registerMode ? "Create your account" : "Log in to start ordering";
         AuthSubmit.Content = _registerMode ? "Create account" : "Log in";
         ToggleModeButton.Content = _registerMode ? "Already have an account? Log in" : "New here? Create an account";
+    }
+
+    private async void DemoLogin_Click(object sender, RoutedEventArgs e)
+    {
+        const string demoUser = "demo_user";
+
+        _users.Register(demoUser, "Demo@123");
+
+        var existingOrders = (await _service.GetAllOrdersAsync())
+            .Where(o => o.CustomerName == demoUser)
+            .ToList();
+
+        if (existingOrders.Count == 0)
+        {
+            var sampleCart = new Cart();
+            var item1 = _menu.FirstOrDefault(m => m.Id == 1) ?? _menu.First();
+            var item2 = _menu.FirstOrDefault(m => m.Id == 3) ?? _menu.Last();
+            sampleCart.Add(item1);
+            sampleCart.Add(item2);
+
+            var discount = _coupons.GetValueOrDefault("SAVE10");
+            await _service.PlaceOrderAsync(sampleCart, discount, demoUser);
+        }
+
+        EnterApp(demoUser);
     }
 
     private void EnterApp(string name)
@@ -233,7 +264,6 @@ public partial class MainWindow : Window
         NoResultsText.Visibility = cards.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    // Looks for Images\<dish id>.jpg (or .jpeg / .png) next to the app. No file means the emoji stays.
     private static ImageSource? LoadImage(int id)
     {
         foreach (string ext in new[] { ".jpg", ".jpeg", ".png" })
@@ -336,7 +366,13 @@ public partial class MainWindow : Window
         ToPayText.Text = $"Rs. {toPay:0.##}";
 
         CartTitle.Text = count == 0 ? "Your cart" : $"Your cart ({count} {(count == 1 ? "item" : "items")})";
-        CartCountText.Text = count.ToString();
+        
+        // Safely update badge count if present
+        if (FindName("CartCountText") is TextBlock cartCount)
+        {
+            cartCount.Text = count.ToString();
+        }
+
         EmptyCartPanel.Visibility = count == 0 ? Visibility.Visible : Visibility.Collapsed;
         PlaceOrderButton.IsEnabled = count > 0;
     }
@@ -392,9 +428,12 @@ public partial class MainWindow : Window
 
     private void PopBadge()
     {
-        var pop = new DoubleAnimation(1, 1.3, TimeSpan.FromMilliseconds(140)) { AutoReverse = true };
-        BadgeScale.BeginAnimation(ScaleTransform.ScaleXProperty, pop);
-        BadgeScale.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
+        if (FindName("BadgeScale") is ScaleTransform badgeScale)
+        {
+            var pop = new DoubleAnimation(1, 1.3, TimeSpan.FromMilliseconds(140)) { AutoReverse = true };
+            badgeScale.BeginAnimation(ScaleTransform.ScaleXProperty, pop);
+            badgeScale.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
+        }
     }
 
     private void ShowToast(string message)
