@@ -8,11 +8,24 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSingleton<IRepository<Order>>(_ => new EfOrderRepository(new OrderDbContext("order.db")));
+// Configure Database Provider (SQLite for local dev / tests, SQL Server for Docker / production)
+string dbProvider = builder.Configuration["Database:Provider"] ?? "Sqlite";
+string? sqlConnString = builder.Configuration.GetConnectionString("SqlServer");
+
+builder.Services.AddSingleton<IRepository<Order>>(_ =>
+{
+    OrderDbContext db = dbProvider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(sqlConnString)
+        ? OrderDbContext.ForSqlServer(sqlConnString)
+        : new OrderDbContext("order.db");
+
+    return new EfOrderRepository(db);
+});
+
 builder.Services.AddSingleton<IOrderService, OrderService>();
 builder.Services.AddSingleton(new UserStore(builder.Configuration["Users:Path"] ?? "users.json"));
 builder.Services.AddOpenApi();
 
+// JWT Authentication Setup
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -38,6 +51,7 @@ app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "Food Or
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Auth Endpoints
 app.MapPost("/api/auth/register", (RegisterRequest request, UserStore users) =>
 {
     string username = request.Username?.Trim() ?? "";
@@ -68,9 +82,11 @@ app.MapPost("/api/auth/login", (LoginRequest request, UserStore users, IConfigur
     return Results.Ok(new { token });
 });
 
+// Menu Endpoint
 app.MapGet("/api/menu", () =>
     MenuCatalog.Items.Select(m => new MenuItemResponse(m.Id, m.Name, m.Price, m is VegItem ? "Veg" : "Non-veg")));
 
+// Orders Endpoints (Secured & User-Scoped)
 app.MapGet("/api/orders", async (IOrderService service, ClaimsPrincipal user) =>
 {
     string name = user.Identity?.Name ?? "";
@@ -113,6 +129,7 @@ app.MapPost("/api/orders", async (PlaceOrderRequest request, IOrderService servi
     }
 }).RequireAuthorization();
 
+// Reports Endpoint (Secured & User-Scoped)
 app.MapGet("/api/reports/summary", async (IOrderService service, ClaimsPrincipal user) =>
 {
     string name = user.Identity?.Name ?? "";
