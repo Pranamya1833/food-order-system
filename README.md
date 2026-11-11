@@ -53,10 +53,12 @@ Then open http://localhost:5000/swagger to try the endpoints. The raw OpenAPI do
 
 | Method | Path | Description |
 |---|---|---|
+| POST | `/api/auth/register` | Register a user |
+| POST | `/api/auth/login` | Login and receive a JWT token |
 | GET | `/api/menu` | List menu items |
-| GET | `/api/orders` | List orders |
-| POST | `/api/orders` | Place an order |
-| GET | `/api/reports/summary` | Order count, revenue and best sellers |
+| GET | `/api/orders` | List orders for the logged-in user (Requires auth) |
+| POST | `/api/orders` | Place an order for the logged-in user (Requires auth) |
+| GET | `/api/reports/summary` | Order count, revenue and best sellers for logged-in user (Requires auth) |
 
 Example request body for `POST /api/orders`:
 
@@ -93,8 +95,7 @@ The SQLite database (`order.db`) is created in the folder you run from.
 
 ## Known limitations
 
-- Login exists only in the WPF app, and orders are not linked to a user yet
-- The API has no authentication
+
 - The repository and `OrderService` are registered as singletons with an in-memory next-id counter, which isn't safe for concurrent requests. A production version would use a scoped `DbContext` and database-generated ids
 - Order status can't be advanced from the UI or the API
 
@@ -103,5 +104,5 @@ The SQLite database (`order.db`) is created in the folder you run from.
 - [x] Make repository and service methods async
 - [x] ASP.NET Core API with Swagger
 - [x] GitHub Actions to build and test on every push
-- [ ] JWT login and per-user orders
+- [x] JWT login and per-user orders
 - [ ] SQL Server support and a Dockerfile
