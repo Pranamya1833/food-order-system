@@ -31,6 +31,10 @@ public class OrderDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>()
+            .Property(o => o.Id)
+            .ValueGeneratedNever();
+
+        modelBuilder.Entity<Order>()
             .Property(o => o.Items)
             .HasConversion(
                 items => JsonSerializer.Serialize(items, (JsonSerializerOptions?)null),
